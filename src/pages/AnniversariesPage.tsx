@@ -1,6 +1,8 @@
+import AnnivTabs from '../components/AnnivTabs';
+import { withActivity } from '../lib/activity';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useOwnerLabel, useStore } from '../store';
+import { useMe, useOwnerLabel, useStore } from '../store';
 import type { Anniversary, AnniversaryKind, Owner } from '../types';
 import { newId } from '../lib/id';
 import { formatJa } from '../lib/dates';
@@ -20,6 +22,7 @@ export default function AnniversariesPage() {
   const canUseApi = mode === 'local' && !!data.settings.googleClientId && !!data.settings.sharedCalendarId;
   const google = useGoogle();
   const navigate = useNavigate();
+  const me = useMe();
   const [editing, setEditing] = useState<Anniversary | null>(null);
   const [message, setMessage] = useState('');
 
@@ -31,7 +34,12 @@ export default function AnniversariesPage() {
     update((d) =>
       a.id
         ? { ...d, anniversaries: d.anniversaries.map((x) => (x.id === a.id ? a : x)) }
-        : { ...d, anniversaries: [...d.anniversaries, { ...a, id: newId() }] },
+        : withActivity(
+            { ...d, anniversaries: [...d.anniversaries, { ...a, id: newId() }] },
+            me,
+            `記念日「${a.title}」を登録しました`,
+            '/anniversaries',
+          ),
     );
     setEditing(null);
   };
@@ -128,6 +136,7 @@ export default function AnniversariesPage() {
 
   return (
     <div className="stack">
+      <AnnivTabs />
       <PageHeader
         title="誕生日・記念日"
         sub="近い順にカウントダウン表示します"

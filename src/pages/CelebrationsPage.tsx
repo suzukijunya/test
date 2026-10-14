@@ -1,3 +1,4 @@
+import AnnivTabs from '../components/AnnivTabs';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
@@ -70,6 +71,7 @@ function PlanList() {
 
   return (
     <div className="stack">
+      <AnnivTabs />
       <PageHeader title="お祝いの準備" sub="誕生日・記念日に向けたプラン、プレゼント、やることリスト" />
       {candidates.length > 0 && (
         <section className="card highlight">

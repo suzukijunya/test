@@ -1,5 +1,6 @@
+import { withActivity } from '../lib/activity';
 import { useState } from 'react';
-import { useStore } from '../store';
+import { useMe, useStore } from '../store';
 import type { Vlog, VlogStatus } from '../types';
 import { newId } from '../lib/id';
 import { formatJa } from '../lib/dates';
@@ -33,6 +34,7 @@ function blank(): Vlog {
 
 export default function VlogsPage() {
   const { data, update } = useStore();
+  const me = useMe();
   const [filter, setFilter] = useState<VlogStatus | 'all'>('all');
   const [tag, setTag] = useState('');
   const [editing, setEditing] = useState<Vlog | null>(null);
@@ -48,7 +50,12 @@ export default function VlogsPage() {
     update((d) =>
       v.id
         ? { ...d, vlogs: d.vlogs.map((x) => (x.id === v.id ? v : x)) }
-        : { ...d, vlogs: [...d.vlogs, { ...v, id: newId(), createdAt: new Date().toISOString() }] },
+        : withActivity(
+            { ...d, vlogs: [...d.vlogs, { ...v, id: newId(), createdAt: new Date().toISOString() }] },
+            me,
+            `Vlog「${v.title}」の企画を追加しました`,
+            '/vlogs',
+          ),
     );
     setEditing(null);
   };
@@ -57,7 +64,11 @@ export default function VlogsPage() {
     setEditing(null);
   };
   const setStatus = (id: string, status: VlogStatus) =>
-    update((d) => ({ ...d, vlogs: d.vlogs.map((v) => (v.id === id ? { ...v, status } : v)) }));
+    update((d) => {
+      const next = { ...d, vlogs: d.vlogs.map((v) => (v.id === id ? { ...v, status } : v)) };
+      const v = d.vlogs.find((x) => x.id === id);
+      return v && status === 'published' ? withActivity(next, me, `Vlog「${v.title}」を公開しました🎉`, '/vlogs') : next;
+    });
 
   return (
     <div className="stack">

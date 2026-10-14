@@ -1,5 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useMe, useOwnerLabel, useStore } from '../store';
+import WhoPicker from '../components/WhoPicker';
+import { timeAgo } from '../lib/activity';
+import { dailyQuestion } from '../lib/questions';
+import { viewRound } from '../lib/game';
 import { daysTogether, formatJa, toDateString } from '../lib/dates';
 import { upcomingEvents } from '../lib/upcoming';
 import { DaysBadge, Empty } from '../components/ui';
@@ -7,6 +11,8 @@ import { VLOG_STATUS } from './VlogsPage';
 
 export default function Home() {
   const { data } = useStore();
+  const me = useMe();
+  const label = useOwnerLabel();
   const { profile } = data;
   const upcoming = upcomingEvents(data.anniversaries, profile).slice(0, 4);
   const openTodos = data.todos.filter((t) => !t.done);
@@ -19,12 +25,18 @@ export default function Home() {
     .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))
     .slice(0, 4);
 
+  const todayQ = dailyQuestion(todayStr);
+  const todayRound = data.rounds.find((r) => r.id === `daily-${todayStr}`);
+  const todayPhase = me && todayRound ? viewRound(todayRound, data.answers, me).phase : 'answer';
+  const feed = [...data.activity].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
+
   return (
     <div className="stack">
+      {!me && <WhoPicker />}
       <section className="hero card">
         {profile.myName || profile.partnerName ? (
           <p className="hero-names">
-            {profile.myName || '自分'} <span className="heart">♥</span> {profile.partnerName || '相手'}
+            {profile.myName || 'ひとり目'} <span className="heart">♡</span> {profile.partnerName || 'ふたり目'}
           </p>
         ) : (
           <p className="hero-names">ふたりノートへようこそ</p>
@@ -73,6 +85,18 @@ export default function Home() {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="card highlight">
+        <div className="card-head">
+          <h2>💭 今日の質問</h2>
+          <Link to="/game">
+            {todayPhase === 'answer' ? '答える' : todayPhase === 'waiting' ? '相手の回答待ち' : '答え合わせを見る'}
+          </Link>
+        </div>
+        <p className="q-text" style={{ textAlign: 'left', fontSize: '1.05rem' }}>
+          {todayRound?.text ?? todayQ.text}
+        </p>
       </section>
 
       <section className="card">
@@ -132,6 +156,27 @@ export default function Home() {
           )}
         </section>
       </div>
+
+      <section className="card">
+        <div className="card-head">
+          <h2>🔔 最近の更新</h2>
+        </div>
+        {feed.length === 0 ? (
+          <Empty>予定の追加やコメント、ゲームの回答などがここに表示されます</Empty>
+        ) : (
+          <ul className="feed">
+            {feed.map((a) => (
+              <li key={a.id}>
+                <span className="who">{label(a.who)}</span>
+                <Link to={a.link} className="grow" style={{ textDecoration: 'none' }}>
+                  {a.text}
+                </Link>
+                <span className="when">{timeAgo(a.at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="card">
         <div className="card-head">

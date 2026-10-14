@@ -11,6 +11,8 @@ export interface Settings {
   googleClientId: string;
   /** 二人で共有している Google カレンダーのID（例: xxxx@group.calendar.google.com） */
   sharedCalendarId: string;
+  /** この端末を使っているのはどちらか（端末ごと） */
+  whoAmI: '' | 'me' | 'partner';
 }
 
 export type TodoKind = 'place' | 'task';
@@ -107,6 +109,63 @@ export interface CalendarEntry {
   owner: Owner;
 }
 
+/** 予定へのコメント（TimeTree風） */
+export interface EventComment {
+  id: string;
+  eventId: string;
+  author: Owner;
+  text: string;
+  at: string;
+}
+
+/** 共有メモ */
+export interface Memo {
+  id: string;
+  title: string;
+  body: string;
+  pinned: boolean;
+  author: Owner;
+  updatedAt: string;
+}
+
+/** 更新履歴（「〇〇が予定を追加しました」） */
+export interface Activity {
+  id: string;
+  who: Owner;
+  text: string;
+  at: string;
+  /** 遷移先（例: /calendar） */
+  link: string;
+}
+
+/** 質問ゲームの1問 */
+export interface GameRound {
+  id: string;
+  questionId: string;
+  text: string;
+  category: string;
+  choices: string[];
+  /** 出題日 YYYY-MM-DD（今日の質問なら日付） */
+  date: string;
+  daily: boolean;
+  createdAt: string;
+}
+
+/** 質問への回答（1人1ドキュメント。同時に書いても上書きし合わないよう分ける） */
+export interface GameAnswer {
+  /** `${roundId}_${who}` */
+  id: string;
+  roundId: string;
+  who: 'me' | 'partner';
+  /** 自分の答え */
+  self: string;
+  /** 相手の答えの予想 */
+  guess: string;
+  /** 相手が判定: この人の予想は当たっていたか */
+  correct: boolean | null;
+  at: string;
+}
+
 export interface AppData {
   version: 1;
   profile: Profile;
@@ -116,4 +175,9 @@ export interface AppData {
   celebrations: CelebrationPlan[];
   vlogs: Vlog[];
   events: CalendarEntry[];
+  comments: EventComment[];
+  memos: Memo[];
+  activity: Activity[];
+  rounds: GameRound[];
+  answers: GameAnswer[];
 }

@@ -1,3 +1,4 @@
+import WhoPicker from '../components/WhoPicker';
 import { useRef, useState } from 'react';
 import { createEmptyData, normalizeData, useStore } from '../store';
 import type { AppData, Profile } from '../types';
@@ -35,6 +36,12 @@ export default function SettingsPage() {
     <div className="stack">
       <PageHeader title="設定" />
       {msg && <div className="notice">{msg}</div>}
+
+      <section className="card">
+        <h2>📱 この端末を使っているのは？</h2>
+        <p className="muted small">コメント・質問ゲーム・更新履歴で「誰が」を表示するのに使います（端末ごとに保存）。</p>
+        <WhoPicker compact />
+      </section>
 
       <section className="card form">
         <h2>👫 ふたりのプロフィール</h2>

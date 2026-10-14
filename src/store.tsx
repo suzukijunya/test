@@ -23,12 +23,18 @@ export function createEmptyData(): AppData {
     settings: {
       googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
       sharedCalendarId: '',
+      whoAmI: '',
     },
     todos: [],
     anniversaries: [],
     celebrations: [],
     vlogs: [],
     events: [],
+    comments: [],
+    memos: [],
+    activity: [],
+    rounds: [],
+    answers: [],
   };
 }
 
@@ -47,6 +53,11 @@ export function normalizeData(raw: unknown): AppData {
     celebrations: arr(r.celebrations),
     vlogs: arr(r.vlogs),
     events: arr(r.events),
+    comments: arr(r.comments),
+    memos: arr(r.memos),
+    activity: arr(r.activity),
+    rounds: arr(r.rounds),
+    answers: arr(r.answers),
   };
 }
 
@@ -222,5 +233,11 @@ export function useStore(): Store {
 export function useOwnerLabel() {
   const { data } = useStore();
   return (o: 'both' | 'me' | 'partner') =>
-    o === 'both' ? 'ふたり' : o === 'me' ? data.profile.myName || '自分' : data.profile.partnerName || '相手';
+    o === 'both' ? 'ふたり' : o === 'me' ? data.profile.myName || 'ひとり目' : data.profile.partnerName || 'ふたり目';
+}
+
+/** この端末の利用者（未設定なら null） */
+export function useMe(): 'me' | 'partner' | null {
+  const { data } = useStore();
+  return data.settings.whoAmI || null;
 }

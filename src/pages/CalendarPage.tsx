@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useOwnerLabel, useStore } from '../store';
-import type { CalendarEntry, Owner } from '../types';
+import { NavLink } from 'react-router-dom';
+import { useMe, useOwnerLabel, useStore } from '../store';
+import { withActivity, timeAgo } from '../lib/activity';
+import type { CalendarEntry, EventComment, Owner } from '../types';
 import { newId } from '../lib/id';
 import { useGoogle } from '../lib/useGoogle';
 import {
@@ -41,7 +43,9 @@ function eventTime(e: CalendarEvent): string | undefined {
 export default function CalendarPage() {
   const { data, update, mode } = useStore();
   const ownerLabel = useOwnerLabel();
+  const me = useMe();
   const google = useGoogle();
+  const [openEntry, setOpenEntry] = useState<string | null>(null);
   /** Google API での直接連携は、ブラウザで直接開いたとき（ローカル版）のみ利用できる */
   const googleApi = mode === 'local';
   const calendarId = data.settings.sharedCalendarId;
@@ -131,13 +135,20 @@ export default function CalendarPage() {
       setError(err instanceof Error ? err.message : String(err));
     }
   };
-  const removeEntry = (id: string) => update((d) => ({ ...d, events: d.events.filter((e) => e.id !== id) }));
+  const removeEntry = (id: string) =>
+    update((d) => ({
+      ...d,
+      events: d.events.filter((e) => e.id !== id),
+      comments: d.comments.filter((c) => c.eventId !== id),
+    }));
+  const opened = data.events.find((e) => e.id === openEntry);
 
   const connected = googleApi && !!google.token;
   const selectedCal = calendars.find((c) => c.id === calendarId);
 
   return (
     <div className="stack">
+      <ScheduleTabs />
       <PageHeader
         title="ふたりのカレンダー"
         sub={
@@ -258,8 +269,13 @@ export default function CalendarPage() {
                   {it.entry?.memo && <span className="memo small">{it.entry.memo}</span>}
                 </span>
                 {it.entry && (
+                  <button className="btn small" onClick={() => setOpenEntry(it.entry!.id)}>
+                    💬 <span className="count">{data.comments.filter((c) => c.eventId === it.entry!.id).length}</span>
+                  </button>
+                )}
+                {it.entry && (
                   <a className="small" href={entryGoogleUrl(it.entry)} target="_blank" rel="noreferrer">
-                    Googleカレンダーに追加
+                    Googleに追加
                   </a>
                 )}
                 {it.event?.htmlLink && (
@@ -289,7 +305,14 @@ export default function CalendarPage() {
           canPushToGoogle={connected && !!calendarId}
           onClose={() => setAdding(null)}
           onSubmit={async (entry, pushToGoogle) => {
-            update((d) => ({ ...d, events: [...d.events, { ...entry, id: newId() }] }));
+            update((d) =>
+              withActivity(
+                { ...d, events: [...d.events, { ...entry, id: newId() }] },
+                me,
+                `予定「${entry.title}」（${formatJa(entry.date)}）を追加しました`,
+                '/calendar',
+              ),
+            );
             setSelected(entry.date);
             setAdding(null);
             if (pushToGoogle && google.token) {
@@ -303,6 +326,8 @@ export default function CalendarPage() {
           }}
         />
       )}
+
+      {opened && <EntryModal entry={opened} onClose={() => setOpenEntry(null)} />}
 
       {showSetup && google.token && (
         <CalendarSetupModal
@@ -528,3 +553,79 @@ function CalendarSetupModal({
   );
 }
 
+
+/** 予定の詳細とコメント（TimeTree風） */
+function EntryModal({ entry, onClose }: { entry: CalendarEntry; onClose: () => void }) {
+  const { data, update } = useStore();
+  const ownerLabel = useOwnerLabel();
+  const me = useMe();
+  const [text, setText] = useState('');
+  const comments = data.comments.filter((c) => c.eventId === entry.id).sort((a, b) => a.at.localeCompare(b.at));
+
+  const send = () => {
+    const t = text.trim();
+    if (!t) return;
+    const c: EventComment = { id: newId(), eventId: entry.id, author: me ?? 'both', text: t, at: new Date().toISOString() };
+    update((d) => withActivity({ ...d, comments: [...d.comments, c] }, me, `「${entry.title}」にコメント: ${t.slice(0, 30)}`, '/calendar'));
+    setText('');
+  };
+
+  return (
+    <Modal title={entry.title} onClose={onClose}>
+      <div className="stack">
+        <div className="meta">
+          <span className="tag">{formatJa(entry.date)}</span>
+          <span className="tag">{entry.startTime ? `${entry.startTime}〜${entry.endTime}` : '終日'}</span>
+          <span className="tag owner">{ownerLabel(entry.owner)}</span>
+        </div>
+        {entry.location && <p className="small">📍 {entry.location}</p>}
+        {entry.memo && <p className="memo">{entry.memo}</p>}
+        <a className="btn small" href={entryGoogleUrl(entry)} target="_blank" rel="noreferrer">
+          📅 Googleカレンダーに追加
+        </a>
+        <section>
+          <h3>💬 コメント</h3>
+          {comments.length === 0 ? (
+            <p className="muted small">「楽しみ！」「何時に待ち合わせる？」など、予定についてやりとりできます</p>
+          ) : (
+            <div className="thread">
+              {comments.map((c) => (
+                <div key={c.id} className={`bubble ${me && c.author === me ? 'mine' : ''}`}>
+                  <span className="by">
+                    {ownerLabel(c.author)}・{timeAgo(c.at)}
+                  </span>
+                  {c.text}
+                </div>
+              ))}
+            </div>
+          )}
+          {!me && <p className="muted small">設定で「この端末を使っているのは？」を選ぶと、誰のコメントか表示されます</p>}
+          <form
+            className="inline-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+          >
+            <input id="comment-text" placeholder="コメントを書く" value={text} onChange={(e) => setText(e.target.value)} />
+            <button className="btn primary">送信</button>
+          </form>
+        </section>
+      </div>
+    </Modal>
+  );
+}
+
+/** カレンダーとメモの切り替え */
+export function ScheduleTabs() {
+  return (
+    <nav className="tabs" aria-label="予定とメモ">
+      <NavLink to="/calendar" className={({ isActive }) => (isActive ? 'active' : '')}>
+        📅 カレンダー
+      </NavLink>
+      <NavLink to="/memos" className={({ isActive }) => (isActive ? 'active' : '')}>
+        📝 メモ
+      </NavLink>
+    </nav>
+  );
+}

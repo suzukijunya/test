@@ -1,6 +1,7 @@
+import { withActivity } from '../lib/activity';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useOwnerLabel, useStore } from '../store';
+import { useMe, useOwnerLabel, useStore } from '../store';
 import type { Owner, TodoItem, TodoKind } from '../types';
 import { newId } from '../lib/id';
 import { formatJa, toDateString } from '../lib/dates';
@@ -26,6 +27,7 @@ function blank(kind: TodoKind): TodoItem {
 export default function TodosPage() {
   const { data, update } = useStore();
   const ownerLabel = useOwnerLabel();
+  const me = useMe();
   const [params, setParams] = useSearchParams();
   const kind: TodoKind = params.get('tab') === 'task' ? 'task' : 'place';
   const [showDone, setShowDone] = useState(false);
@@ -42,17 +44,32 @@ export default function TodosPage() {
   const save = (item: TodoItem) => {
     update((d) => {
       if (item.id) return { ...d, todos: d.todos.map((t) => (t.id === item.id ? item : t)) };
-      return { ...d, todos: [...d.todos, { ...item, id: newId(), createdAt: new Date().toISOString() }] };
+      return withActivity(
+        { ...d, todos: [...d.todos, { ...item, id: newId(), createdAt: new Date().toISOString() }] },
+        me,
+        item.kind === 'place' ? `行きたいお店「${item.title}」を追加しました` : `タスク「${item.title}」を追加しました`,
+        `/todos`,
+      );
     });
     setEditing(null);
   };
   const toggle = (id: string) =>
-    update((d) => ({
-      ...d,
-      todos: d.todos.map((t) =>
-        t.id === id ? { ...t, done: !t.done, doneAt: t.done ? '' : toDateString(new Date()) } : t,
-      ),
-    }));
+    update((d) => {
+      const target = d.todos.find((t) => t.id === id);
+      const next = {
+        ...d,
+        todos: d.todos.map((t) =>
+          t.id === id ? { ...t, done: !t.done, doneAt: t.done ? '' : toDateString(new Date()) } : t,
+        ),
+      };
+      if (!target || target.done) return next;
+      return withActivity(
+        next,
+        me,
+        target.kind === 'place' ? `「${target.title}」に行きました！` : `タスク「${target.title}」を完了しました`,
+        '/todos',
+      );
+    });
   const remove = (id: string) => {
     update((d) => ({ ...d, todos: d.todos.filter((t) => t.id !== id) }));
   };

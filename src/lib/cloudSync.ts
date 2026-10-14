@@ -5,7 +5,18 @@
  */
 import type { AppData, CelebrationPlan } from '../types';
 
-export const SHARED_COLLECTIONS = ['todos', 'anniversaries', 'celebrations', 'vlogs', 'events'] as const;
+export const SHARED_COLLECTIONS = [
+  'todos',
+  'anniversaries',
+  'celebrations',
+  'vlogs',
+  'events',
+  'comments',
+  'memos',
+  'activity',
+  'rounds',
+  'answers',
+] as const;
 export const PROFILE_PATH = 'meta/profile';
 const PRIVATE_CEL_PREFIX = 'cel_';
 
@@ -45,6 +56,11 @@ export function fromDocs(docs: DocMap, base: AppData, uid: string | null): AppDa
     celebrations: [],
     vlogs: [],
     events: [],
+    comments: [],
+    memos: [],
+    activity: [],
+    rounds: [],
+    answers: [],
   };
   const priv = uid ? `${privateCollection(uid)}/${PRIVATE_CEL_PREFIX}` : null;
   for (const [path, body] of Object.entries(docs)) {
