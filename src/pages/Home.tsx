@@ -39,7 +39,7 @@ export default function Home() {
             {profile.myName || 'ひとり目'} <span className="heart">♡</span> {profile.partnerName || 'ふたり目'}
           </p>
         ) : (
-          <p className="hero-names">ふたりノートへようこそ</p>
+          <p className="hero-names">nyasuへようこそ</p>
         )}
         {profile.startDate ? (
           <p className="hero-days">

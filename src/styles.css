@@ -39,7 +39,8 @@ input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--pink-lin
   background: var(--white); border-bottom: 1.5px solid var(--pink);
 }
 .brand { font-weight: 700; font-size: 1.2rem; letter-spacing: 0.06em; display: flex; align-items: center; gap: 8px; }
-.brand-mark { width: 26px; height: 26px; border-radius: 50%; background: var(--pink); display: grid; place-items: center; font-size: 0.85rem; }
+.brand-name { font-size: 1.3rem; letter-spacing: 0.12em; font-weight: 700; }
+.logo { flex-shrink: 0; }
 .topbar-right { display: flex; align-items: center; gap: 6px; }
 .nav { display: flex; flex-direction: column; gap: 4px; padding: 16px 10px; background: var(--white); border-right: 1.5px solid var(--pink); }
 .nav a { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; text-decoration: none; color: var(--text); }

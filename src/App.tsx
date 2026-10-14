@@ -9,6 +9,7 @@ import GamePage from './pages/GamePage';
 import VlogsPage from './pages/VlogsPage';
 import SettingsPage from './pages/SettingsPage';
 import { useStore } from './store';
+import Logo from './components/Logo';
 
 /** mobile: false のものはスマホの下部タブに出さない（各画面のタブや右上から開く） */
 const NAV = [
@@ -30,10 +31,8 @@ export default function App() {
     <div className="layout">
       <header className="topbar">
         <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
-          <span className="brand-mark" aria-hidden="true">
-            ♡
-          </span>
-          ふたりノート
+          <Logo />
+          <span className="brand-name">nyasu</span>
         </Link>
         <div className="topbar-right">
           <span className={`sync sync-${mode}`}>{SYNC_LABEL[mode]}</span>
