@@ -166,6 +166,14 @@ export interface GameAnswer {
   at: string;
 }
 
+/** 部屋の飾り（購入済みのもの）。id は飾りカタログのID */
+export interface DecorState {
+  id: string;
+  placed: boolean;
+  boughtBy: Owner;
+  boughtAt: string;
+}
+
 export interface AppData {
   version: 1;
   profile: Profile;
@@ -180,4 +188,5 @@ export interface AppData {
   activity: Activity[];
   rounds: GameRound[];
   answers: GameAnswer[];
+  decor: DecorState[];
 }

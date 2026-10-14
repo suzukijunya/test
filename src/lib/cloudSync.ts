@@ -16,6 +16,7 @@ export const SHARED_COLLECTIONS = [
   'activity',
   'rounds',
   'answers',
+  'decor',
 ] as const;
 export const PROFILE_PATH = 'meta/profile';
 const PRIVATE_CEL_PREFIX = 'cel_';
@@ -61,6 +62,7 @@ export function fromDocs(docs: DocMap, base: AppData, uid: string | null): AppDa
     activity: [],
     rounds: [],
     answers: [],
+    decor: [],
   };
   const priv = uid ? `${privateCollection(uid)}/${PRIVATE_CEL_PREFIX}` : null;
   for (const [path, body] of Object.entries(docs)) {

@@ -35,6 +35,7 @@ export function createEmptyData(): AppData {
     activity: [],
     rounds: [],
     answers: [],
+    decor: [],
   };
 }
 
@@ -58,6 +59,7 @@ export function normalizeData(raw: unknown): AppData {
     activity: arr(r.activity),
     rounds: arr(r.rounds),
     answers: arr(r.answers),
+    decor: arr(r.decor),
   };
 }
 

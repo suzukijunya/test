@@ -10,6 +10,9 @@ import VlogsPage from './pages/VlogsPage';
 import SettingsPage from './pages/SettingsPage';
 import { useStore } from './store';
 import Logo from './components/Logo';
+import RoomPage from './pages/RoomPage';
+import { CoinPill } from './components/Coin';
+import { RunningCat } from './components/art/Cat';
 
 /** mobile: false のものはスマホの下部タブに出さない（各画面のタブや右上から開く） */
 const NAV = [
@@ -20,6 +23,7 @@ const NAV = [
   { to: '/celebrations', label: 'お祝い準備', short: '準備', icon: '🎁', mobile: false },
   { to: '/game', label: '質問ゲーム', short: 'ゲーム', icon: '💭', mobile: true },
   { to: '/vlogs', label: 'Vlog', short: 'Vlog', icon: '🎬', mobile: true },
+  { to: '/room', label: 'ふたりのおへや', short: 'おへや', icon: '🛋️', mobile: false },
   { to: '/settings', label: '設定', short: '設定', icon: '⚙️', mobile: false },
 ];
 
@@ -27,16 +31,28 @@ const SYNC_LABEL = { local: 'この端末に保存', connecting: '接続中…',
 
 export default function App() {
   const { mode, syncError } = useStore();
+  if (mode === 'connecting') {
+    return (
+      <div className="loading-screen" role="status">
+        <p>おへやを準備しているよ。待っててね</p>
+        <RunningCat width={160} />
+        <div className="progress">
+          <div />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="layout">
       <header className="topbar">
-        <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="brand">
           <Logo />
           <span className="brand-name">nyasu</span>
         </Link>
         <div className="topbar-right">
           <span className={`sync sync-${mode}`}>{SYNC_LABEL[mode]}</span>
-          <Link to="/settings" className="icon-btn" aria-label="設定" style={{ textDecoration: 'none' }}>
+          <CoinPill />
+          <Link to="/settings" className="square-btn" aria-label="設定">
             ⚙️
           </Link>
         </div>
@@ -68,6 +84,7 @@ export default function App() {
           <Route path="/game" element={<GamePage />} />
           <Route path="/vlogs" element={<VlogsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/room" element={<RoomPage />} />
         </Routes>
       </main>
     </div>

@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useMe, useOwnerLabel, useStore } from '../store';
 import WhoPicker from '../components/WhoPicker';
+import { RoomScene } from '../components/art/Room';
+import { RankDots } from '../components/Coin';
+import { DECOR, earnedCoins, isPlaced, rankOf } from '../lib/room';
 import { timeAgo } from '../lib/activity';
 import { dailyQuestion } from '../lib/questions';
 import { viewRound } from '../lib/game';
@@ -28,28 +31,44 @@ export default function Home() {
   const todayQ = dailyQuestion(todayStr);
   const todayRound = data.rounds.find((r) => r.id === `daily-${todayStr}`);
   const todayPhase = me && todayRound ? viewRound(todayRound, data.answers, me).phase : 'answer';
+  const { rank, progress, step } = rankOf(earnedCoins(data));
   const feed = [...data.activity].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
 
   return (
     <div className="stack">
       {!me && <WhoPicker />}
-      <section className="hero card">
-        {profile.myName || profile.partnerName ? (
-          <p className="hero-names">
-            {profile.myName || 'ひとり目'} <span className="heart">♡</span> {profile.partnerName || 'ふたり目'}
-          </p>
-        ) : (
-          <p className="hero-names">nyasuへようこそ</p>
-        )}
-        {profile.startDate ? (
-          <p className="hero-days">
-            付き合って <strong>{daysTogether(profile.startDate).toLocaleString()}</strong> 日目
-          </p>
-        ) : (
-          <p className="muted">
-            <Link to="/settings">設定</Link>で名前と付き合った日を登録しましょう
-          </p>
-        )}
+      <section className="room-hero">
+        <Link to="/room" aria-label="ふたりのおへやを開く">
+          <RoomScene placed={DECOR.filter((d) => isPlaced(data, d.id)).map((d) => d.id)} className="room" />
+        </Link>
+        <div className="room-top">
+          <span className="pill big">
+            {profile.myName || profile.partnerName ? (
+              <>
+                {profile.myName || 'ひとり目'} <span className="heart">♡</span> {profile.partnerName || 'ふたり目'}
+              </>
+            ) : (
+              'nyasuへようこそ'
+            )}
+          </span>
+          <Link to="/room" className="square-btn" aria-label="おへやの飾りを見る">
+            🛋️
+          </Link>
+        </div>
+        <div className="room-bottom">
+          <Link to="/room" className="pill">
+            Rank {rank} <RankDots progress={progress} step={step} />
+          </Link>
+          {profile.startDate ? (
+            <span className="pill hero-days">
+              付き合って <strong>{daysTogether(profile.startDate).toLocaleString()}</strong> 日
+            </span>
+          ) : (
+            <Link to="/settings" className="pill">
+              名前と付き合った日を登録
+            </Link>
+          )}
+        </div>
       </section>
 
       <section className="card">
