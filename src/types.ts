@@ -93,6 +93,20 @@ export interface Vlog {
   createdAt: string;
 }
 
+/** アプリ内で共有する予定（Googleカレンダーへは追加リンクで登録） */
+export interface CalendarEntry {
+  id: string;
+  title: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** HH:mm（空なら終日） */
+  startTime: string;
+  endTime: string;
+  location: string;
+  memo: string;
+  owner: Owner;
+}
+
 export interface AppData {
   version: 1;
   profile: Profile;
@@ -101,4 +115,5 @@ export interface AppData {
   anniversaries: Anniversary[];
   celebrations: CelebrationPlan[];
   vlogs: Vlog[];
+  events: CalendarEntry[];
 }

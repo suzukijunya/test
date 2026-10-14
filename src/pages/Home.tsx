@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
-import { daysTogether, formatJa } from '../lib/dates';
+import { daysTogether, formatJa, toDateString } from '../lib/dates';
 import { upcomingEvents } from '../lib/upcoming';
 import { DaysBadge, Empty } from '../components/ui';
 import { VLOG_STATUS } from './VlogsPage';
@@ -13,6 +13,11 @@ export default function Home() {
   const places = openTodos.filter((t) => t.kind === 'place');
   const tasks = openTodos.filter((t) => t.kind === 'task');
   const inProgressVlogs = data.vlogs.filter((v) => v.status !== 'published');
+  const todayStr = toDateString(new Date());
+  const nextEvents = data.events
+    .filter((e) => e.date >= todayStr)
+    .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))
+    .slice(0, 4);
 
   return (
     <div className="stack">
@@ -66,6 +71,27 @@ export default function Home() {
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <h2>📅 これからの予定</h2>
+          <Link to="/calendar">カレンダー</Link>
+        </div>
+        {nextEvents.length === 0 ? (
+          <Empty>デートや旅行の予定をカレンダーに追加しましょう</Empty>
+        ) : (
+          <ul className="list compact">
+            {nextEvents.map((e) => (
+              <li key={e.id} className="row">
+                <span className="muted small time-wide">
+                  {formatJa(e.date)} {e.startTime}
+                </span>
+                <span className="grow">{e.title}</span>
+              </li>
+            ))}
           </ul>
         )}
       </section>

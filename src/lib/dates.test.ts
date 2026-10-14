@@ -86,3 +86,17 @@ describe('buildEventBody', () => {
     expect(b.end).toEqual({ dateTime: '2026-10-14T20:00:00', timeZone: 'Asia/Tokyo' });
   });
 });
+
+import { addToGoogleCalendarUrl } from './googleCalendar';
+describe('addToGoogleCalendarUrl', () => {
+  it('終日・毎年', () => {
+    const u = new URL(addToGoogleCalendarUrl({ summary: '誕生日', date: '2026-12-31', yearly: true }));
+    expect(u.searchParams.get('dates')).toBe('20261231/20270101');
+    expect(u.searchParams.get('recur')).toBe('RRULE:FREQ=YEARLY');
+  });
+  it('時間指定', () => {
+    const u = new URL(addToGoogleCalendarUrl({ summary: 'ディナー', date: '2026-10-14', startTime: '18:00', endTime: '20:30' }, 'Asia/Tokyo'));
+    expect(u.searchParams.get('dates')).toBe('20261014T180000/20261014T203000');
+    expect(u.searchParams.get('ctz')).toBe('Asia/Tokyo');
+  });
+});

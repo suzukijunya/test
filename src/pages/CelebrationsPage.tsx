@@ -5,7 +5,7 @@ import type { Anniversary, CelebrationPlan, GiftIdea } from '../types';
 import { newId } from '../lib/id';
 import { daysBetween, formatJa, parseDate, sameDayInYear } from '../lib/dates';
 import { buildPlan, planProgress, upcomingEvents } from '../lib/upcoming';
-import { DaysBadge, Empty, Field, PageHeader } from '../components/ui';
+import { ConfirmButton, DaysBadge, Empty, Field, PageHeader } from '../components/ui';
 
 function planDate(a: Anniversary, year: number): Date {
   return a.yearly ? sameDayInYear(parseDate(a.date), year) : parseDate(a.date);
@@ -111,7 +111,7 @@ function PlanList() {
 }
 
 function PlanDetail({ id }: { id: string }) {
-  const { data, update } = useStore();
+  const { data, update, mode, hasPrivate } = useStore();
   const navigate = useNavigate();
   const plan = data.celebrations.find((c) => c.id === id);
   const anniversary = plan && data.anniversaries.find((a) => a.id === plan.anniversaryId);
@@ -147,7 +147,6 @@ function PlanDetail({ id }: { id: string }) {
     setGift({ name: '', price: '', url: '' });
   };
   const removePlan = () => {
-    if (!confirm('このお祝いプランを削除しますか？')) return;
     update((d) => ({ ...d, celebrations: d.celebrations.filter((c) => c.id !== id) }));
     navigate('/celebrations');
   };
@@ -165,7 +164,9 @@ function PlanDetail({ id }: { id: string }) {
 
       <label className="check">
         <input type="checkbox" checked={plan.secret} onChange={(e) => setField('secret', e.target.checked)} />
-        🤫 サプライズ（相手に見せないように注意）
+        {mode === 'cloud' && hasPrivate
+          ? '🤫 サプライズ（このプランは自分にだけ表示され、相手には見えません）'
+          : '🤫 サプライズ（相手に見せないように注意）'}
       </label>
 
       <section className="card">
@@ -282,9 +283,9 @@ function PlanDetail({ id }: { id: string }) {
         </Field>
       </section>
 
-      <button className="btn danger" onClick={removePlan}>
+      <ConfirmButton className="btn danger" confirmLabel="もう一度押すと削除します" onConfirm={removePlan}>
         このプランを削除
-      </button>
+      </ConfirmButton>
     </div>
   );
 }

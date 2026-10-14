@@ -5,9 +5,9 @@ import type { Anniversary, AnniversaryKind, Owner } from '../types';
 import { newId } from '../lib/id';
 import { formatJa } from '../lib/dates';
 import { buildPlan, upcomingEvents } from '../lib/upcoming';
-import { createEvent } from '../lib/googleCalendar';
+import { addToGoogleCalendarUrl, createEvent } from '../lib/googleCalendar';
 import { useGoogle } from '../lib/useGoogle';
-import { DaysBadge, Empty, Field, Modal, PageHeader } from '../components/ui';
+import { ConfirmButton, DaysBadge, Empty, Field, Modal, PageHeader } from '../components/ui';
 
 const KIND_LABEL: Record<AnniversaryKind, string> = { birthday: '誕生日', anniversary: '記念日', other: 'その他' };
 
@@ -16,7 +16,8 @@ function blank(): Anniversary {
 }
 
 export default function AnniversariesPage() {
-  const { data, update } = useStore();
+  const { data, update, mode } = useStore();
+  const canUseApi = mode === 'local' && !!data.settings.googleClientId && !!data.settings.sharedCalendarId;
   const google = useGoogle();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<Anniversary | null>(null);
@@ -35,7 +36,6 @@ export default function AnniversariesPage() {
     setEditing(null);
   };
   const remove = (id: string) => {
-    if (!confirm('削除しますか？（お祝い準備も削除されます）')) return;
     update((d) => ({
       ...d,
       anniversaries: d.anniversaries.filter((a) => a.id !== id),
@@ -97,15 +97,31 @@ export default function AnniversariesPage() {
             🎁 お祝い準備
           </button>
         )}
-        <button className="btn small" onClick={() => addToCalendar(a)} disabled={google.busy}>
-          📅 カレンダーに登録
-        </button>
+        {canUseApi ? (
+          <button className="btn small" onClick={() => addToCalendar(a)} disabled={google.busy}>
+            📅 共有カレンダーに登録
+          </button>
+        ) : (
+          <a
+            className="btn small"
+            target="_blank"
+            rel="noreferrer"
+            href={addToGoogleCalendarUrl({
+              summary: `${a.kind === 'birthday' ? '🎂' : '💍'} ${a.title}`,
+              description: a.memo,
+              date: a.date,
+              yearly: a.yearly,
+            })}
+          >
+            📅 Googleカレンダーに追加
+          </a>
+        )}
         <button className="btn small" onClick={() => setEditing(a)}>
           編集
         </button>
-        <button className="btn small danger" onClick={() => remove(a.id)}>
+        <ConfirmButton confirmLabel="お祝い準備ごと削除？" onConfirm={() => remove(a.id)}>
           削除
-        </button>
+        </ConfirmButton>
       </div>
     </li>
   );

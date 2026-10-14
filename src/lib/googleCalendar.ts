@@ -214,3 +214,25 @@ export async function deleteEvent(token: GoogleToken, calendarId: string, eventI
     method: 'DELETE',
   });
 }
+
+function compact(date: string, time?: string) {
+  return date.replaceAll('-', '') + (time ? `T${time.replace(':', '')}00` : '');
+}
+
+/**
+ * Googleカレンダーの「予定を作成」画面を開くURL（ログイン連携なしで使える）
+ */
+export function addToGoogleCalendarUrl(
+  e: NewEvent,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+): string {
+  const dates = e.startTime
+    ? `${compact(e.date, e.startTime)}/${compact(e.date, e.endTime || e.startTime)}`
+    : `${compact(e.date)}/${compact(addDays(e.date, 1))}`;
+  const q = new URLSearchParams({ action: 'TEMPLATE', text: e.summary, dates });
+  if (e.startTime) q.set('ctz', timeZone);
+  if (e.description) q.set('details', e.description);
+  if (e.location) q.set('location', e.location);
+  if (e.yearly) q.set('recur', 'RRULE:FREQ=YEARLY');
+  return `https://calendar.google.com/calendar/render?${q}`;
+}

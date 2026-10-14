@@ -6,6 +6,7 @@ import AnniversariesPage from './pages/AnniversariesPage';
 import CelebrationsPage from './pages/CelebrationsPage';
 import VlogsPage from './pages/VlogsPage';
 import SettingsPage from './pages/SettingsPage';
+import { useStore } from './store';
 
 const NAV = [
   { to: '/', label: 'ホーム', icon: '🏠' },
@@ -17,11 +18,15 @@ const NAV = [
   { to: '/settings', label: '設定', icon: '⚙️' },
 ];
 
+const SYNC_LABEL = { local: 'この端末に保存', connecting: '接続中…', cloud: 'ふたりで共有中' } as const;
+
 export default function App() {
+  const { mode, syncError } = useStore();
   return (
     <div className="layout">
       <header className="topbar">
         <span className="brand">💑 ふたりノート</span>
+        <span className={`sync sync-${mode}`}>{SYNC_LABEL[mode]}</span>
       </header>
       <nav className="nav">
         {NAV.map((n) => (
@@ -33,6 +38,7 @@ export default function App() {
         ))}
       </nav>
       <main className="main">
+        {syncError && <div className="notice error">{syncError}</div>}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/calendar" element={<CalendarPage />} />

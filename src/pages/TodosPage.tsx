@@ -4,7 +4,7 @@ import { useOwnerLabel, useStore } from '../store';
 import type { Owner, TodoItem, TodoKind } from '../types';
 import { newId } from '../lib/id';
 import { formatJa, toDateString } from '../lib/dates';
-import { Empty, Field, Modal, PageHeader } from '../components/ui';
+import { ConfirmButton, Empty, Field, Modal, PageHeader } from '../components/ui';
 
 function blank(kind: TodoKind): TodoItem {
   return {
@@ -54,7 +54,6 @@ export default function TodosPage() {
       ),
     }));
   const remove = (id: string) => {
-    if (!confirm('削除しますか？')) return;
     update((d) => ({ ...d, todos: d.todos.filter((t) => t.id !== id) }));
   };
 
@@ -140,9 +139,9 @@ export default function TodosPage() {
                   <button className="icon-btn" onClick={() => setEditing(t)} aria-label="編集">
                     ✏️
                   </button>
-                  <button className="icon-btn" onClick={() => remove(t.id)} aria-label="削除">
+                  <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => remove(t.id)}>
                     🗑
-                  </button>
+                  </ConfirmButton>
                 </div>
               </div>
             </li>

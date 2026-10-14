@@ -4,7 +4,7 @@ import type { Vlog, VlogStatus } from '../types';
 import { newId } from '../lib/id';
 import { formatJa } from '../lib/dates';
 import { thumbnailFor } from '../lib/youtube';
-import { Empty, Field, Modal, PageHeader } from '../components/ui';
+import { ConfirmButton, Empty, Field, Modal, PageHeader } from '../components/ui';
 
 export const VLOG_STATUS: Record<VlogStatus, string> = {
   idea: '💡 企画',
@@ -53,7 +53,6 @@ export default function VlogsPage() {
     setEditing(null);
   };
   const remove = (id: string) => {
-    if (!confirm('削除しますか？')) return;
     update((d) => ({ ...d, vlogs: d.vlogs.filter((v) => v.id !== id) }));
     setEditing(null);
   };
@@ -103,7 +102,7 @@ export default function VlogsPage() {
             return (
               <li key={v.id} className="card vlog">
                 <button className="thumb" onClick={() => setEditing(v)} aria-label={`${v.title}を編集`}>
-                  {thumb ? <img src={thumb} alt="" loading="lazy" /> : <span>🎬</span>}
+                  <Thumb src={thumb || ''} />
                 </button>
                 <div className="vlog-body">
                   <div className="todo-title">{v.title}</div>
@@ -276,9 +275,9 @@ function VlogForm({
         </Field>
         <div className="form-actions">
           {onDelete && (
-            <button type="button" className="btn danger" onClick={onDelete}>
+            <ConfirmButton className="btn danger" onConfirm={onDelete}>
               削除
-            </button>
+            </ConfirmButton>
           )}
           <span className="grow" />
           <button type="button" className="btn" onClick={onClose}>
@@ -291,4 +290,11 @@ function VlogForm({
       </form>
     </Modal>
   );
+}
+
+/** 外部画像が読み込めない環境（埋め込み表示など）ではアイコンを表示 */
+function Thumb({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <span>🎬</span>;
+  return <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />;
 }

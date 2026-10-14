@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useStore } from '../store';
+import { useOwnerLabel, useStore } from '../store';
+import type { CalendarEntry, Owner } from '../types';
+import { newId } from '../lib/id';
 import { useGoogle } from '../lib/useGoogle';
 import {
   createCalendar,
@@ -9,18 +10,21 @@ import {
   listCalendars,
   listEvents,
   shareCalendar,
+  addToGoogleCalendarUrl,
+  type NewEvent,
   type CalendarEvent,
   type CalendarListEntry,
 } from '../lib/googleCalendar';
 import { formatJa, nextOccurrence, toDateString } from '../lib/dates';
-import { Field, Modal, PageHeader } from '../components/ui';
+import { ConfirmButton, Field, Modal, PageHeader } from '../components/ui';
 
 interface DayItem {
   key: string;
   title: string;
   time?: string;
-  kind: 'google' | 'anniversary';
+  kind: 'google' | 'anniversary' | 'app';
   event?: CalendarEvent;
+  entry?: CalendarEntry;
 }
 
 function eventDateKey(e: CalendarEvent): string {
@@ -35,8 +39,11 @@ function eventTime(e: CalendarEvent): string | undefined {
 }
 
 export default function CalendarPage() {
-  const { data, update } = useStore();
+  const { data, update, mode } = useStore();
+  const ownerLabel = useOwnerLabel();
   const google = useGoogle();
+  /** Google API での直接連携は、ブラウザで直接開いたとき（ローカル版）のみ利用できる */
+  const googleApi = mode === 'local';
   const calendarId = data.settings.sharedCalendarId;
   const [month, setMonth] = useState(() => {
     const t = new Date();
@@ -45,8 +52,9 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [calendars, setCalendars] = useState<CalendarListEntry[]>([]);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string>(() => toDateString(new Date()));
   const [adding, setAdding] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
 
@@ -94,10 +102,13 @@ export default function CalendarPage() {
   const itemsByDay = useMemo(() => {
     const map = new Map<string, DayItem[]>();
     const push = (k: string, item: DayItem) => map.set(k, [...(map.get(k) ?? []), item]);
+    for (const e of [...data.events].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))) {
+      push(e.date, { key: `e-${e.id}`, title: e.title, time: e.startTime || undefined, kind: 'app', entry: e });
+    }
     for (const e of events) {
       push(eventDateKey(e), { key: e.id, title: e.summary ?? '(無題)', time: eventTime(e), kind: 'google', event: e });
     }
-    // アプリ内の記念日も重ねて表示
+    // 記念日も重ねて表示
     const rangeStart = cells[0];
     for (const a of data.anniversaries) {
       const occ = nextOccurrence(a.date, a.yearly, rangeStart);
@@ -106,13 +117,13 @@ export default function CalendarPage() {
       }
     }
     return map;
-  }, [events, data.anniversaries, cells]);
+  }, [events, data.events, data.anniversaries, cells]);
 
   const today = toDateString(new Date());
-  const selectedItems = selected ? itemsByDay.get(selected) ?? [] : [];
+  const selectedItems = itemsByDay.get(selected) ?? [];
 
-  const remove = async (e: CalendarEvent) => {
-    if (!google.token || !confirm(`「${e.summary}」を削除しますか？`)) return;
+  const removeGoogle = async (e: CalendarEvent) => {
+    if (!google.token) return;
     try {
       await deleteEvent(google.token, calendarId, e.id);
       refresh();
@@ -120,42 +131,55 @@ export default function CalendarPage() {
       setError(err instanceof Error ? err.message : String(err));
     }
   };
+  const removeEntry = (id: string) => update((d) => ({ ...d, events: d.events.filter((e) => e.id !== id) }));
 
-  const connected = !!google.token;
+  const connected = googleApi && !!google.token;
   const selectedCal = calendars.find((c) => c.id === calendarId);
 
   return (
     <div className="stack">
       <PageHeader
         title="ふたりのカレンダー"
-        sub={selectedCal ? `Googleカレンダー「${selectedCal.summary}」と同期中` : 'Googleカレンダーの共有カレンダーと連携'}
+        sub={
+          selectedCal
+            ? `ふたりの予定 ＋ Googleカレンダー「${selectedCal.summary}」`
+            : 'ふたりの予定・記念日をまとめて表示'
+        }
         action={
-          connected ? (
-            <div className="row">
-              <button className="btn" onClick={() => setShowSetup(true)}>
-                カレンダー設定
-              </button>
-              <button className="btn" onClick={google.disconnect}>
-                ログアウト
-              </button>
-            </div>
-          ) : (
-            <button className="btn primary" onClick={google.connect} disabled={google.busy}>
-              Googleでログイン
+          <div className="row wrap">
+            <button className="btn primary" onClick={() => setAdding(selected)}>
+              ＋ 予定を追加
             </button>
-          )
+            {googleApi &&
+              (connected ? (
+                <>
+                  <button className="btn" onClick={() => setShowSetup(true)}>
+                    カレンダー設定
+                  </button>
+                  <button className="btn" onClick={google.disconnect}>
+                    ログアウト
+                  </button>
+                </>
+              ) : (
+                data.settings.googleClientId && (
+                  <button className="btn" onClick={google.connect} disabled={google.busy}>
+                    Googleと連携
+                  </button>
+                )
+              ))}
+          </div>
         }
       />
-      {!data.settings.googleClientId && (
-        <div className="notice">
-          Googleカレンダーを使うには <Link to="/settings">設定</Link> で OAuth クライアントIDを登録してください（README参照）。
-          登録するまではアプリ内の記念日だけが表示されます。
-        </div>
+      {!googleApi && (
+        <p className="muted small">
+          ここに登録した予定はふたりの間で共有されます。各予定の「Googleカレンダーに追加」から、自分のGoogleカレンダーにも登録できます。
+        </p>
       )}
-      {(error || google.error) && <div className="notice error">{error || google.error}</div>}
+      {message && <div className="notice">{message}</div>}
+      {googleApi && (error || google.error) && <div className="notice error">{error || google.error}</div>}
       {connected && !calendarId && (
         <div className="notice">
-          共有するカレンダーがまだ選ばれていません。{' '}
+          共有するGoogleカレンダーがまだ選ばれていません。{' '}
           <button className="btn small primary" onClick={() => setShowSetup(true)}>
             設定する
           </button>
@@ -163,13 +187,21 @@ export default function CalendarPage() {
       )}
 
       <div className="cal-head">
-        <button className="icon-btn" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+        <button
+          className="icon-btn"
+          aria-label="前の月"
+          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+        >
           ◀
         </button>
         <h2>
           {month.getFullYear()}年{month.getMonth() + 1}月 {loading && <span className="muted small">読み込み中…</span>}
         </h2>
-        <button className="icon-btn" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+        <button
+          className="icon-btn"
+          aria-label="次の月"
+          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+        >
           ▶
         </button>
       </div>
@@ -201,55 +233,72 @@ export default function CalendarPage() {
         })}
       </div>
 
-      {selected && (
-        <section className="card">
-          <div className="card-head">
-            <h2>{formatJa(selected)}</h2>
-            {connected && calendarId && (
-              <button className="btn small primary" onClick={() => setAdding(selected)}>
-                ＋ 予定を追加
-              </button>
-            )}
-          </div>
-          {selectedItems.length === 0 ? (
-            <p className="muted">予定はありません</p>
-          ) : (
-            <ul className="list">
-              {selectedItems.map((it) => (
-                <li key={it.key} className="row">
-                  <span className="muted small time">{it.time ?? '終日'}</span>
-                  <span className="grow">
-                    {it.title}
-                    {it.event?.location && <span className="muted small"> 📍{it.event.location}</span>}
-                  </span>
-                  {it.event?.htmlLink && (
-                    <a href={it.event.htmlLink} target="_blank" rel="noreferrer" className="small">
-                      開く
-                    </a>
+      <section className="card">
+        <div className="card-head">
+          <h2>{formatJa(selected)}</h2>
+          <button className="btn small primary" onClick={() => setAdding(selected)}>
+            ＋ 追加
+          </button>
+        </div>
+        {selectedItems.length === 0 ? (
+          <p className="muted">予定はありません</p>
+        ) : (
+          <ul className="list">
+            {selectedItems.map((it) => (
+              <li key={it.key} className="row wrap">
+                <span className="muted small time">
+                  {it.entry ? (it.entry.startTime ? `${it.entry.startTime}` : '終日') : (it.time ?? '終日')}
+                </span>
+                <span className="grow">
+                  {it.title}
+                  {it.entry && <span className="tag owner"> {ownerLabel(it.entry.owner)}</span>}
+                  {(it.entry?.location || it.event?.location) && (
+                    <span className="muted small"> 📍{it.entry?.location || it.event?.location}</span>
                   )}
-                  {it.event && (
-                    <button className="icon-btn" aria-label="削除" onClick={() => remove(it.event!)}>
-                      🗑
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
+                  {it.entry?.memo && <span className="memo small">{it.entry.memo}</span>}
+                </span>
+                {it.entry && (
+                  <a className="small" href={entryGoogleUrl(it.entry)} target="_blank" rel="noreferrer">
+                    Googleカレンダーに追加
+                  </a>
+                )}
+                {it.event?.htmlLink && (
+                  <a href={it.event.htmlLink} target="_blank" rel="noreferrer" className="small">
+                    Googleで開く
+                  </a>
+                )}
+                {it.entry && (
+                  <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => removeEntry(it.entry!.id)}>
+                    🗑
+                  </ConfirmButton>
+                )}
+                {it.event && (
+                  <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => removeGoogle(it.event!)}>
+                    🗑
+                  </ConfirmButton>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-      {adding && google.token && (
+      {adding && (
         <AddEventModal
           date={adding}
+          canPushToGoogle={connected && !!calendarId}
           onClose={() => setAdding(null)}
-          onSubmit={async (ev) => {
-            try {
-              await createEvent(google.token!, calendarId, ev);
-              setAdding(null);
-              refresh();
-            } catch (e) {
-              setError(e instanceof Error ? e.message : String(e));
+          onSubmit={async (entry, pushToGoogle) => {
+            update((d) => ({ ...d, events: [...d.events, { ...entry, id: newId() }] }));
+            setSelected(entry.date);
+            setAdding(null);
+            if (pushToGoogle && google.token) {
+              try {
+                await createEvent(google.token, calendarId, entryToNewEvent(entry));
+                refresh();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : String(e));
+              }
             }
           }}
         />
@@ -278,7 +327,7 @@ export default function CalendarPage() {
           onInvite={async (email) => {
             try {
               await shareCalendar(google.token!, calendarId, email);
-              alert(`${email} を招待しました`);
+              setMessage(`${email} を招待しました`);
             } catch (e) {
               setError(e instanceof Error ? e.message : String(e));
             }
@@ -289,39 +338,82 @@ export default function CalendarPage() {
   );
 }
 
+function entryToNewEvent(e: Omit<CalendarEntry, 'id'>): NewEvent {
+  return {
+    summary: e.title,
+    date: e.date,
+    startTime: e.startTime || undefined,
+    endTime: e.endTime || undefined,
+    location: e.location || undefined,
+    description: e.memo || undefined,
+  };
+}
+
+function entryGoogleUrl(e: CalendarEntry) {
+  return addToGoogleCalendarUrl(entryToNewEvent(e));
+}
+
 function AddEventModal({
   date,
+  canPushToGoogle,
   onClose,
   onSubmit,
 }: {
   date: string;
+  canPushToGoogle: boolean;
   onClose: () => void;
-  onSubmit: (e: { summary: string; date: string; startTime?: string; endTime?: string; location?: string; description?: string }) => void;
+  onSubmit: (e: Omit<CalendarEntry, 'id'>, pushToGoogle: boolean) => void;
 }) {
-  const [f, setF] = useState({ summary: '', date, allDay: true, startTime: '12:00', endTime: '13:00', location: '', description: '' });
+  const ownerLabel = useOwnerLabel();
+  const [f, setF] = useState({
+    title: '',
+    date,
+    allDay: true,
+    startTime: '12:00',
+    endTime: '13:00',
+    location: '',
+    memo: '',
+    owner: 'both' as Owner,
+  });
+  const [push, setPush] = useState(true);
   return (
     <Modal title="予定を追加" onClose={onClose}>
       <form
         className="form"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!f.summary.trim()) return;
-          onSubmit({
-            summary: f.summary.trim(),
-            date: f.date,
-            startTime: f.allDay ? undefined : f.startTime,
-            endTime: f.allDay ? undefined : f.endTime,
-            location: f.location || undefined,
-            description: f.description || undefined,
-          });
+          if (!f.title.trim()) return;
+          onSubmit(
+            {
+              title: f.title.trim(),
+              date: f.date,
+              startTime: f.allDay ? '' : f.startTime,
+              endTime: f.allDay ? '' : f.endTime,
+              location: f.location,
+              memo: f.memo,
+              owner: f.owner,
+            },
+            canPushToGoogle && push,
+          );
         }}
       >
         <Field label="タイトル">
-          <input autoFocus required value={f.summary} onChange={(e) => setF({ ...f, summary: e.target.value })} />
+          <input id="ev-title" autoFocus required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
         </Field>
-        <Field label="日付">
-          <input type="date" required value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
-        </Field>
+        <div className="grid-2">
+          <Field label="日付">
+            <input id="ev-date" type="date" required value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
+          </Field>
+          <Field label="誰の予定？">
+            <select id="ev-owner" value={f.owner} onChange={(e) => setF({ ...f, owner: e.target.value as Owner })}>
+              {(['both', 'me', 'partner'] as Owner[]).map((o) => (
+                <option key={o} value={o}>
+                  {ownerLabel(o)}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
         <label className="check">
           <input type="checkbox" checked={f.allDay} onChange={(e) => setF({ ...f, allDay: e.target.checked })} />
           終日
@@ -329,19 +421,25 @@ function AddEventModal({
         {!f.allDay && (
           <div className="grid-2">
             <Field label="開始">
-              <input type="time" value={f.startTime} onChange={(e) => setF({ ...f, startTime: e.target.value })} />
+              <input id="ev-start" type="time" value={f.startTime} onChange={(e) => setF({ ...f, startTime: e.target.value })} />
             </Field>
             <Field label="終了">
-              <input type="time" value={f.endTime} onChange={(e) => setF({ ...f, endTime: e.target.value })} />
+              <input id="ev-end" type="time" value={f.endTime} onChange={(e) => setF({ ...f, endTime: e.target.value })} />
             </Field>
           </div>
         )}
         <Field label="場所">
-          <input value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} />
+          <input id="ev-location" value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} />
         </Field>
         <Field label="メモ">
-          <textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+          <textarea id="ev-memo" rows={2} value={f.memo} onChange={(e) => setF({ ...f, memo: e.target.value })} />
         </Field>
+        {canPushToGoogle && (
+          <label className="check">
+            <input type="checkbox" checked={push} onChange={(e) => setPush(e.target.checked)} />
+            共有Googleカレンダーにも登録する
+          </label>
+        )}
         <div className="form-actions">
           <button type="button" className="btn" onClick={onClose}>
             キャンセル
