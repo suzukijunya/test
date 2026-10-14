@@ -13,6 +13,17 @@ export interface Settings {
   sharedCalendarId: string;
   /** この端末を使っているのはどちらか（端末ごと） */
   whoAmI: '' | 'me' | 'partner';
+  /** Googleカレンダー同期（端末ごと） */
+  gsync?: GoogleSyncSettings;
+}
+
+export interface GoogleSyncSettings {
+  /** 予定名を隠して「予定あり」とだけ共有する */
+  hideTitles: boolean;
+  /** 開いたときに自動で同期する（最初の同期が成功すると有効になる） */
+  auto: boolean;
+  /** 最後に同期した日時（ISO） */
+  lastSyncedAt: string;
 }
 
 export type TodoKind = 'place' | 'task';
@@ -107,6 +118,10 @@ export interface CalendarEntry {
   location: string;
   memo: string;
   owner: Owner;
+  /** Googleカレンダーから同期した予定 */
+  source?: 'google';
+  /** 同期元のGoogleカレンダーの予定ID */
+  googleId?: string;
 }
 
 /** 予定へのコメント（TimeTree風） */

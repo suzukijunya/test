@@ -30,7 +30,7 @@ export const DECOR: DecorItem[] = [
 export const COIN_RULES = [
   { label: 'はじめてのごほうび', coins: 100 },
   { label: 'やりたいことを完了・お店に行った', coins: 10 },
-  { label: '予定を追加', coins: 5 },
+  { label: '予定を追加（Google同期分はのぞく）', coins: 5 },
   { label: 'メモを書く', coins: 5 },
   { label: 'コメントする', coins: 2 },
   { label: '記念日を登録', coins: 10 },
@@ -42,7 +42,8 @@ export const COIN_RULES = [
 export function earnedCoins(d: AppData): number {
   let c = 100;
   c += d.todos.filter((t) => t.done).length * 10;
-  c += d.events.length * 5;
+  // Googleカレンダーから取り込んだ予定はコインの対象外
+  c += d.events.filter((e) => e.source !== 'google').length * 5;
   c += d.memos.length * 5;
   c += d.comments.length * 2;
   c += d.anniversaries.length * 10;

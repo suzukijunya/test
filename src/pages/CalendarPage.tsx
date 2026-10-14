@@ -5,6 +5,8 @@ import { withActivity, timeAgo } from '../lib/activity';
 import type { CalendarEntry, EventComment, Owner } from '../types';
 import { newId } from '../lib/id';
 import { useGoogle } from '../lib/useGoogle';
+import { useGoogleSync } from '../lib/useGoogleSync';
+import { timeAgo as ago } from '../lib/activity';
 import {
   createCalendar,
   createEvent,
@@ -186,6 +188,7 @@ export default function CalendarPage() {
           ここに登録した予定はふたりの間で共有されます。各予定の「Googleカレンダーに追加」から、自分のGoogleカレンダーにも登録できます。
         </p>
       )}
+      {!googleApi && <GoogleSyncCard />}
       {message && <div className="notice">{message}</div>}
       {googleApi && (error || google.error) && <div className="notice error">{error || google.error}</div>}
       {connected && !calendarId && (
@@ -263,6 +266,7 @@ export default function CalendarPage() {
                 <span className="grow">
                   {it.title}
                   {it.entry && <span className="tag owner"> {ownerLabel(it.entry.owner)}</span>}
+                  {it.entry?.source === 'google' && <span className="tag"> Google</span>}
                   {(it.entry?.location || it.event?.location) && (
                     <span className="muted small"> 📍{it.entry?.location || it.event?.location}</span>
                   )}
@@ -273,7 +277,7 @@ export default function CalendarPage() {
                     💬 <span className="count">{data.comments.filter((c) => c.eventId === it.entry!.id).length}</span>
                   </button>
                 )}
-                {it.entry && (
+                {it.entry && it.entry.source !== 'google' && (
                   <a className="small" href={entryGoogleUrl(it.entry)} target="_blank" rel="noreferrer">
                     Googleに追加
                   </a>
@@ -580,9 +584,13 @@ function EntryModal({ entry, onClose }: { entry: CalendarEntry; onClose: () => v
         </div>
         {entry.location && <p className="small">📍 {entry.location}</p>}
         {entry.memo && <p className="memo">{entry.memo}</p>}
-        <a className="btn small" href={entryGoogleUrl(entry)} target="_blank" rel="noreferrer">
-          📅 Googleカレンダーに追加
-        </a>
+        {entry.source === 'google' ? (
+          <p className="muted small">{ownerLabel(entry.owner)}のGoogleカレンダーから同期した予定です</p>
+        ) : (
+          <a className="btn small" href={entryGoogleUrl(entry)} target="_blank" rel="noreferrer">
+            📅 Googleカレンダーに追加
+          </a>
+        )}
         <section>
           <h3>💬 コメント</h3>
           {comments.length === 0 ? (
@@ -627,5 +635,52 @@ export function ScheduleTabs() {
         📝 メモ
       </NavLink>
     </nav>
+  );
+}
+
+/** claude.ai の Google Calendar コネクタから自分の予定を取り込む */
+function GoogleSyncCard() {
+  const gs = useGoogleSync();
+  const me = useMe();
+  const ownerLabel = useOwnerLabel();
+  if (gs.available === false) return null;
+  return (
+    <section className="card highlight">
+      <div className="card-head">
+        <h2>🔄 Googleカレンダーと同期</h2>
+        {gs.settings.lastSyncedAt && <span className="muted small">最終同期 {ago(gs.settings.lastSyncedAt)}</span>}
+      </div>
+      {!me ? (
+        <p className="small">先に「設定」で、この端末を使っているのが誰かを選んでください。</p>
+      ) : (
+        <div className="stack" style={{ gap: 10 }}>
+          <p className="small" style={{ margin: 0 }}>
+            {ownerLabel(me)}のGoogleカレンダーの予定（1週間前〜2か月先）を取り込み、ふたりのカレンダーに表示します。
+          </p>
+          <div className="row wrap">
+            <button className="btn primary" onClick={() => void gs.sync()} disabled={gs.syncing || gs.available === null}>
+              {gs.syncing ? '同期中…' : '今すぐ同期'}
+            </button>
+            {gs.lastResult && !gs.error && <span className="small">{gs.lastResult}</span>}
+          </div>
+          {gs.error && <div className="notice error small">{gs.error}</div>}
+          <label className="check small">
+            <input
+              type="checkbox"
+              checked={gs.settings.hideTitles}
+              onChange={(e) => gs.setSettings({ hideTitles: e.target.checked })}
+            />
+            予定名を隠して「予定あり」とだけ共有する（次の同期から反映）
+          </label>
+          <label className="check small">
+            <input type="checkbox" checked={gs.settings.auto} onChange={(e) => gs.setSettings({ auto: e.target.checked })} />
+            開いたときに自動で同期する
+          </label>
+          <p className="muted small" style={{ margin: 0 }}>
+            はじめて同期するときに、Google Calendar の読み取りを許可する確認が出ます。Google Calendar は claude.ai の「設定 → コネクタ」で追加しておいてください。
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
