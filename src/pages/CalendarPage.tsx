@@ -274,7 +274,7 @@ export default function CalendarPage() {
                 </span>
                 {it.entry && (
                   <button className="btn small" onClick={() => setOpenEntry(it.entry!.id)}>
-                    💬 <span className="count">{data.comments.filter((c) => c.eventId === it.entry!.id).length}</span>
+                    コメント <span className="count">{data.comments.filter((c) => c.eventId === it.entry!.id).length}</span>
                   </button>
                 )}
                 {it.entry && it.entry.source !== 'google' && (
@@ -289,12 +289,12 @@ export default function CalendarPage() {
                 )}
                 {it.entry && (
                   <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => removeEntry(it.entry!.id)}>
-                    🗑
+                    けす
                   </ConfirmButton>
                 )}
                 {it.event && (
                   <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => removeGoogle(it.event!)}>
-                    🗑
+                    けす
                   </ConfirmButton>
                 )}
               </li>
@@ -582,17 +582,17 @@ function EntryModal({ entry, onClose }: { entry: CalendarEntry; onClose: () => v
           <span className="tag">{entry.startTime ? `${entry.startTime}〜${entry.endTime}` : '終日'}</span>
           <span className="tag owner">{ownerLabel(entry.owner)}</span>
         </div>
-        {entry.location && <p className="small">📍 {entry.location}</p>}
+        {entry.location && <p className="small">{entry.location}</p>}
         {entry.memo && <p className="memo">{entry.memo}</p>}
         {entry.source === 'google' ? (
           <p className="muted small">{ownerLabel(entry.owner)}のGoogleカレンダーから同期した予定です</p>
         ) : (
           <a className="btn small" href={entryGoogleUrl(entry)} target="_blank" rel="noreferrer">
-            📅 Googleカレンダーに追加
+            Googleカレンダーに追加
           </a>
         )}
         <section>
-          <h3>💬 コメント</h3>
+          <h3>コメント</h3>
           {comments.length === 0 ? (
             <p className="muted small">「楽しみ！」「何時に待ち合わせる？」など、予定についてやりとりできます</p>
           ) : (
@@ -629,10 +629,10 @@ export function ScheduleTabs() {
   return (
     <nav className="tabs" aria-label="予定とメモ">
       <NavLink to="/calendar" className={({ isActive }) => (isActive ? 'active' : '')}>
-        📅 カレンダー
+        カレンダー
       </NavLink>
       <NavLink to="/memos" className={({ isActive }) => (isActive ? 'active' : '')}>
-        📝 メモ
+        メモ
       </NavLink>
     </nav>
   );
@@ -647,7 +647,7 @@ function GoogleSyncCard() {
   return (
     <section className="card highlight">
       <div className="card-head">
-        <h2>🔄 Googleカレンダーと同期</h2>
+        <h2>Googleカレンダーと同期</h2>
         {gs.settings.lastSyncedAt && <span className="muted small">最終同期 {ago(gs.settings.lastSyncedAt)}</span>}
       </div>
       {!me ? (

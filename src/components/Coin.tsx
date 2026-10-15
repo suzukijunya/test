@@ -1,28 +1,26 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { coinBalance } from '../lib/room';
+import { COIN, Sprite } from './art/pixel';
 
 export function Coin({ small = false }: { small?: boolean }) {
-  return (
-    <span className={`coin ${small ? 'small' : ''}`} aria-hidden="true">
-      ♡
-    </span>
-  );
+  return <Sprite rows={COIN} size={small ? 12 : 16} className="coin" />;
 }
 
-/** 所持コイン（タップでおへやへ） */
+/** 所持ゴールド（タップでおへやへ） */
 export function CoinPill() {
   const { data } = useStore();
   const coins = coinBalance(data);
   return (
-    <Link to="/room" className="coin-pill" aria-label={`コイン ${coins}枚。おへやを開く`}>
+    <Link to="/room" className="coin-pill" aria-label={`${coins}ゴールド。おへやを開く`}>
       <Coin />
       {coins.toLocaleString()}
+      <span className="unit">G</span>
     </Link>
   );
 }
 
-/** ランクの進み具合（5つの丸） */
+/** 次のレベルまでのけいけんち（5マス） */
 export function RankDots({ progress, step }: { progress: number; step: number }) {
   const on = Math.floor((progress / step) * 5);
   return (

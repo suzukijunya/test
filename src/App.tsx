@@ -14,30 +14,35 @@ import RoomPage from './pages/RoomPage';
 import { CoinPill } from './components/Coin';
 import { RunningCat } from './components/art/Cat';
 
-/** mobile: false のものはスマホの下部タブに出さない（各画面のタブや右上から開く） */
+/** コマンド。mobile: false のものはスマホの下のコマンドに出さない（各画面のタブや右上から開く） */
 const NAV = [
-  { to: '/', label: 'ホーム', short: 'ホーム', icon: '🏠', mobile: true },
-  { to: '/calendar', label: 'カレンダー・メモ', short: '予定', icon: '📅', mobile: true },
-  { to: '/todos', label: 'やりたいこと', short: 'やりたい', icon: '📝', mobile: true },
-  { to: '/anniversaries', label: '記念日', short: '記念日', icon: '🎂', mobile: true },
-  { to: '/celebrations', label: 'お祝い準備', short: '準備', icon: '🎁', mobile: false },
-  { to: '/game', label: '質問ゲーム', short: 'ゲーム', icon: '💭', mobile: true },
-  { to: '/vlogs', label: 'Vlog', short: 'Vlog', icon: '🎬', mobile: true },
-  { to: '/room', label: 'ふたりのおへや', short: 'おへや', icon: '🛋️', mobile: false },
-  { to: '/settings', label: '設定', short: '設定', icon: '⚙️', mobile: false },
+  { to: '/', label: 'ホーム', short: 'ホーム', mobile: true },
+  { to: '/calendar', label: 'よてい・メモ', short: 'よてい', mobile: true },
+  { to: '/todos', label: 'やりたいこと', short: 'やりたい', mobile: true },
+  { to: '/anniversaries', label: 'きねんび', short: 'きねんび', mobile: true },
+  { to: '/celebrations', label: 'おいわいじゅんび', short: 'じゅんび', mobile: false },
+  { to: '/game', label: 'しつもん', short: 'しつもん', mobile: true },
+  { to: '/vlogs', label: 'Vlog', short: 'Vlog', mobile: true },
+  { to: '/room', label: 'おへや', short: 'おへや', mobile: false },
+  { to: '/settings', label: 'せってい', short: 'せってい', mobile: false },
 ];
 
-const SYNC_LABEL = { local: 'この端末に保存', connecting: '接続中…', cloud: 'ふたりで共有中' } as const;
+const SYNC_LABEL = { local: 'この端末にセーブ', connecting: 'せつぞく中…', cloud: 'ふたりで共有中' } as const;
 
 export default function App() {
   const { mode, syncError } = useStore();
   if (mode === 'connecting') {
     return (
       <div className="loading-screen" role="status">
-        <p>おへやを準備しているよ。待っててね</p>
-        <RunningCat width={160} />
-        <div className="progress">
-          <div />
+        <div className="walk">
+          <RunningCat width={64} />
+        </div>
+        <div className="grass" aria-hidden="true" />
+        <div className="loading-window">
+          ぼうけんのしょを よみこみちゅう
+          <div className="progress">
+            <div />
+          </div>
         </div>
       </div>
     );
@@ -52,12 +57,13 @@ export default function App() {
         <div className="topbar-right">
           <span className={`sync sync-${mode}`}>{SYNC_LABEL[mode]}</span>
           <CoinPill />
-          <Link to="/settings" className="square-btn" aria-label="設定">
-            ⚙️
+          <Link to="/settings" className="square-btn" aria-label="せってい">
+            せってい
           </Link>
         </div>
       </header>
-      <nav className="nav">
+      <nav className="nav" aria-label="コマンド">
+        <span className="nav-title">コマンド</span>
         {NAV.map((n) => (
           <NavLink
             key={n.to}
@@ -65,7 +71,6 @@ export default function App() {
             end={n.to === '/'}
             className={({ isActive }) => [isActive ? 'active' : '', n.mobile ? '' : 'desktop-only'].join(' ')}
           >
-            <span className="nav-icon">{n.icon}</span>
             <span className="nav-label">{n.label}</span>
             <span className="nav-short">{n.short}</span>
           </NavLink>

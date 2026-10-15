@@ -102,12 +102,12 @@ export default function AnniversariesPage() {
       <div className="card-actions">
         {extra && (
           <button className="btn small primary" onClick={() => startPrep(a, extra.date.getFullYear(), extra.daysLeft)}>
-            🎁 お祝い準備
+            お祝い準備
           </button>
         )}
         {canUseApi ? (
           <button className="btn small" onClick={() => addToCalendar(a)} disabled={google.busy}>
-            📅 共有カレンダーに登録
+            共有カレンダーに登録
           </button>
         ) : (
           <a
@@ -121,7 +121,7 @@ export default function AnniversariesPage() {
               yearly: a.yearly,
             })}
           >
-            📅 Googleカレンダーに追加
+            Googleカレンダーに追加
           </a>
         )}
         <button className="btn small" onClick={() => setEditing(a)}>

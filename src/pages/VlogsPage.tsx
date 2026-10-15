@@ -8,10 +8,10 @@ import { thumbnailFor } from '../lib/youtube';
 import { ConfirmButton, Empty, Field, Modal, PageHeader } from '../components/ui';
 
 export const VLOG_STATUS: Record<VlogStatus, string> = {
-  idea: '💡 企画',
-  shooting: '🎥 撮影',
-  editing: '✂️ 編集中',
-  published: '🚀 公開済',
+  idea: '企画',
+  shooting: '撮影',
+  editing: '編集中',
+  published: '公開済',
 };
 const STATUSES = Object.keys(VLOG_STATUS) as VlogStatus[];
 
@@ -258,8 +258,7 @@ function VlogForm({
                   aria-label="削除"
                   onClick={() => set('shotList', f.shotList.filter((x) => x.id !== s.id))}
                 >
-                  ✕
-                </button>
+                                  </button>
               </li>
             ))}
           </ul>

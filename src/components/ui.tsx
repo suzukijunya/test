@@ -23,8 +23,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
         <div className="modal-head">
           <h2>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="閉じる">
-            ✕
-          </button>
+                      </button>
         </div>
         {children}
       </div>

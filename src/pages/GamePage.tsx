@@ -94,13 +94,13 @@ export default function GamePage() {
       </div>
 
       <section className="stack">
-        <h2>☀️ 今日の質問</h2>
+        <h2>今日の質問</h2>
         <RoundCard view={viewRound(todayRound, data.answers, me)} me={me} onSubmit={submit} onJudge={judge} />
       </section>
 
       <section className="card">
         <div className="card-head">
-          <h2>🎲 もう1問</h2>
+          <h2>もう1問</h2>
         </div>
         <div className="toolbar">
           <select id="game-cat" value={category} onChange={(e) => setCategory(e.target.value as Category | '')}>
@@ -118,7 +118,7 @@ export default function GamePage() {
 
       {pending.length > 0 && (
         <section className="stack">
-          <h2>⏳ 回答待ち</h2>
+          <h2>回答待ち</h2>
           {pending.map((v) => (
             <RoundCard key={v.round.id} view={v} me={me} onSubmit={submit} onJudge={judge} />
           ))}
@@ -126,7 +126,7 @@ export default function GamePage() {
       )}
 
       <section className="stack">
-        <h2>📖 これまでの答え合わせ</h2>
+        <h2>これまでの答え合わせ</h2>
         {history.length === 0 ? (
           <Empty>ふたりとも答えた質問がここに残ります</Empty>
         ) : (
@@ -177,7 +177,7 @@ function RoundCard({
 
   const myResult = guessResult(mine, theirs, round);
   const theirResult = guessResult(theirs, mine, round);
-  const mark = (r: boolean | null) => (r === null ? '判定待ち' : r ? '⭕ 当たり' : '❌ はずれ');
+  const mark = (r: boolean | null) => (r === null ? '判定待ち' : r ? '⭕ 当たり' : 'はずれ');
 
   return (
     <div className="q-card">

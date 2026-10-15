@@ -104,7 +104,7 @@ function MemoForm({ memo, onSave, onDelete }: { memo: Memo; onSave: (m: Memo) =>
       </Field>
       <label className="check">
         <input type="checkbox" checked={f.pinned} onChange={(e) => setF({ ...f, pinned: e.target.checked })} />
-        📌 上に固定する
+        上に固定する
       </label>
       <div className="form-actions">
         {onDelete && (

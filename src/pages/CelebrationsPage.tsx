@@ -53,7 +53,7 @@ function PlanList() {
           <span className="emoji">{a.kind === 'birthday' ? '🎂' : '💍'}</span>
           <div className="grow">
             <div className="todo-title">
-              {a.title} {p.secret && <span className="tag secret">🤫 サプライズ</span>}
+              {a.title} {p.secret && <span className="tag secret">サプライズ</span>}
             </div>
             <div className="muted small">{formatJa(date)}</div>
             <div className="progress">
@@ -75,7 +75,7 @@ function PlanList() {
       <PageHeader title="お祝いの準備" sub="誕生日・記念日に向けたプラン、プレゼント、やることリスト" />
       {candidates.length > 0 && (
         <section className="card highlight">
-          <h2>⏰ もうすぐの記念日（60日以内）</h2>
+          <h2>もうすぐの記念日（60日以内）</h2>
           <ul className="list">
             {candidates.map((u) => (
               <li key={u.key} className="row">
@@ -167,12 +167,12 @@ function PlanDetail({ id }: { id: string }) {
       <label className="check">
         <input type="checkbox" checked={plan.secret} onChange={(e) => setField('secret', e.target.checked)} />
         {mode === 'cloud' && hasPrivate
-          ? '🤫 サプライズ（このプランは自分にだけ表示され、相手には見えません）'
-          : '🤫 サプライズ（相手に見せないように注意）'}
+          ? 'サプライズ（このプランは自分にだけ表示され、相手には見えません）'
+          : 'サプライズ（相手に見せないように注意）'}
       </label>
 
       <section className="card">
-        <h2>✅ やることリスト</h2>
+        <h2>やることリスト</h2>
         <div className="progress">
           <div style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
         </div>
@@ -192,8 +192,7 @@ function PlanDetail({ id }: { id: string }) {
                 aria-label="削除"
                 onClick={() => patch((p) => ({ ...p, tasks: p.tasks.filter((x) => x.id !== t.id) }))}
               >
-                ✕
-              </button>
+                              </button>
             </li>
           ))}
         </ul>
@@ -210,7 +209,7 @@ function PlanDetail({ id }: { id: string }) {
       </section>
 
       <section className="card">
-        <h2>🎁 プレゼント候補</h2>
+        <h2>プレゼント候補</h2>
         <p className="muted small">
           予算 {plan.budget ? `¥${plan.budget.toLocaleString()}` : '未設定'}　/ 決定済み合計 ¥{chosenTotal.toLocaleString()}
           {plan.budget > 0 && chosenTotal > plan.budget && <span className="warn">　予算オーバー！</span>}
@@ -241,8 +240,7 @@ function PlanDetail({ id }: { id: string }) {
                 aria-label="削除"
                 onClick={() => patch((p) => ({ ...p, gifts: p.gifts.filter((x) => x.id !== g.id) }))}
               >
-                ✕
-              </button>
+                              </button>
             </li>
           ))}
         </ul>
@@ -268,7 +266,7 @@ function PlanDetail({ id }: { id: string }) {
       </section>
 
       <section className="card form">
-        <h2>📝 プラン</h2>
+        <h2>プラン</h2>
         <Field label="予算（円）">
           <input
             type="number"

@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { useMe, useOwnerLabel, useStore } from '../store';
 import WhoPicker from '../components/WhoPicker';
 import { RoomScene } from '../components/art/Room';
-import { RankDots } from '../components/Coin';
-import { DECOR, earnedCoins, isPlaced, rankOf } from '../lib/room';
+import { HEART, Sprite } from '../components/art/pixel';
+import { DECOR, coinBalance, earnedCoins, isPlaced, rankOf } from '../lib/room';
 import { timeAgo } from '../lib/activity';
 import { dailyQuestion } from '../lib/questions';
 import { viewRound } from '../lib/game';
@@ -42,30 +42,42 @@ export default function Home() {
           <RoomScene placed={DECOR.filter((d) => isPlaced(data, d.id)).map((d) => d.id)} className="room" />
         </Link>
         <div className="room-top">
-          <span className="pill big">
-            {profile.myName || profile.partnerName ? (
-              <>
-                {profile.myName || 'ひとり目'} <span className="heart">♡</span> {profile.partnerName || 'ふたり目'}
-              </>
-            ) : (
-              'nyasuへようこそ'
-            )}
-          </span>
-          <Link to="/room" className="square-btn" aria-label="おへやの飾りを見る">
-            🛋️
+          <span />
+          <Link to="/room" className="pill">
+            ▶ おへや
           </Link>
         </div>
-        <div className="room-bottom">
-          <Link to="/room" className="pill">
-            Rank {rank} <RankDots progress={progress} step={step} />
-          </Link>
-          {profile.startDate ? (
-            <span className="pill hero-days">
-              付き合って <strong>{daysTogether(profile.startDate).toLocaleString()}</strong> 日
-            </span>
+      </section>
+
+      <section className="status-window" aria-label="ふたりのつよさ">
+        <div className="names">
+          {profile.myName || profile.partnerName ? (
+            <>
+              {profile.myName || 'ひとり目'} <Sprite rows={HEART} size={14} /> {profile.partnerName || 'ふたり目'}
+            </>
           ) : (
-            <Link to="/settings" className="pill">
-              名前と付き合った日を登録
+            'nyasu へ ようこそ'
+          )}
+        </div>
+        <div className="stat">
+          <span className="k">レベル</span>
+          <span className="v">{rank}</span>
+        </div>
+        <div className="stat">
+          <span className="k">ゴールド</span>
+          <span className="v gold">{coinBalance(data).toLocaleString()} G</span>
+        </div>
+        <div className="stat">
+          <span className="k">つぎのLvまで</span>
+          <span className="v">{step - progress}</span>
+        </div>
+        <div className="stat">
+          <span className="k">ふたりの日</span>
+          {profile.startDate ? (
+            <span className="v">{daysTogether(profile.startDate).toLocaleString()}日</span>
+          ) : (
+            <Link to="/settings" className="v">
+              ▶ とうろく
             </Link>
           )}
         </div>
@@ -73,7 +85,7 @@ export default function Home() {
 
       <section className="card">
         <div className="card-head">
-          <h2>🎉 近づいている記念日</h2>
+          <h2>近づいている記念日</h2>
           <Link to="/anniversaries">すべて見る</Link>
         </div>
         {upcoming.length === 0 ? (
@@ -108,7 +120,7 @@ export default function Home() {
 
       <section className="card highlight">
         <div className="card-head">
-          <h2>💭 今日の質問</h2>
+          <h2>今日の質問</h2>
           <Link to="/game">
             {todayPhase === 'answer' ? '答える' : todayPhase === 'waiting' ? '相手の回答待ち' : '答え合わせを見る'}
           </Link>
@@ -120,7 +132,7 @@ export default function Home() {
 
       <section className="card">
         <div className="card-head">
-          <h2>📅 これからの予定</h2>
+          <h2>これからの予定</h2>
           <Link to="/calendar">カレンダー</Link>
         </div>
         {nextEvents.length === 0 ? (
@@ -142,7 +154,7 @@ export default function Home() {
       <div className="grid-2">
         <section className="card">
           <div className="card-head">
-            <h2>🍽 行きたいお店</h2>
+            <h2>行きたいお店</h2>
             <Link to="/todos?tab=place">{places.length}件</Link>
           </div>
           {places.length === 0 ? (
@@ -159,7 +171,7 @@ export default function Home() {
         </section>
         <section className="card">
           <div className="card-head">
-            <h2>✅ ふたりのタスク</h2>
+            <h2>ふたりのタスク</h2>
             <Link to="/todos?tab=task">{tasks.length}件</Link>
           </div>
           {tasks.length === 0 ? (
@@ -178,7 +190,7 @@ export default function Home() {
 
       <section className="card">
         <div className="card-head">
-          <h2>🔔 最近の更新</h2>
+          <h2>最近の更新</h2>
         </div>
         {feed.length === 0 ? (
           <Empty>予定の追加やコメント、ゲームの回答などがここに表示されます</Empty>
@@ -199,7 +211,7 @@ export default function Home() {
 
       <section className="card">
         <div className="card-head">
-          <h2>🎬 制作中のVlog</h2>
+          <h2>制作中のVlog</h2>
           <Link to="/vlogs">すべて見る</Link>
         </div>
         {inProgressVlogs.length === 0 ? (

@@ -89,10 +89,10 @@ export default function TodosPage() {
       />
       <div className="tabs">
         <button className={isPlace ? 'active' : ''} onClick={() => setParams({ tab: 'place' })}>
-          🍽 行きたいお店
+          行きたいお店
         </button>
         <button className={!isPlace ? 'active' : ''} onClick={() => setParams({ tab: 'task' })}>
-          ✅ タスク
+          タスク
         </button>
       </div>
       <div className="toolbar">
@@ -138,7 +138,7 @@ export default function TodosPage() {
                   <div className="links">
                     {t.url && (
                       <a href={t.url} target="_blank" rel="noreferrer">
-                        🔗 リンク
+                        リンク
                       </a>
                     )}
                     {isPlace && (t.address || t.title) && (
@@ -147,17 +147,16 @@ export default function TodosPage() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        📍 地図
+                        地図
                       </a>
                     )}
                   </div>
                 </div>
                 <div className="actions">
                   <button className="icon-btn" onClick={() => setEditing(t)} aria-label="編集">
-                    ✏️
-                  </button>
+                                      </button>
                   <ConfirmButton className="icon-btn" confirmLabel="削除？" ariaLabel="削除" onConfirm={() => remove(t.id)}>
-                    🗑
+                    けす
                   </ConfirmButton>
                 </div>
               </div>

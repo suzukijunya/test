@@ -2,7 +2,7 @@
 
 ju**nya**（じゅんや）＋ a**su**ka（あすか）から生まれた、ふたりのためのアプリ。
 
-カップルのための管理アプリ（React + TypeScript + Vite）。スマホでもPCでも使えます。
+カップルのための管理アプリ（React + TypeScript + Vite）。8ビットRPG風のドット絵デザインで、スマホでもPCでも使えます。
 
 ## 機能
 
@@ -87,6 +87,6 @@ src/
     room.ts            おへやのコイン・飾り・ランク
     googleSync.ts      Google Calendar コネクタからの予定の取り込み
     useGoogleSync.tsx  同期の実行・自動同期・エラー表示
-  components/art/      黒ネコとおへやのイラスト（SVG）
+  components/art/      ドット絵（pixel.tsx のスプライト、おへや、歩くネコ）
   pages/               各画面
 ```

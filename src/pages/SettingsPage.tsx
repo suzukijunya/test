@@ -38,13 +38,13 @@ export default function SettingsPage() {
       {msg && <div className="notice">{msg}</div>}
 
       <section className="card">
-        <h2>📱 この端末を使っているのは？</h2>
+        <h2>この端末を使っているのは？</h2>
         <p className="muted small">コメント・質問ゲーム・更新履歴で「誰が」を表示するのに使います（端末ごとに保存）。</p>
         <WhoPicker compact />
       </section>
 
       <section className="card form">
-        <h2>👫 ふたりのプロフィール</h2>
+        <h2>ふたりのプロフィール</h2>
         {cloud && <p className="muted small">プロフィールはふたりで共有されます。</p>}
         <div className="grid-2">
           <Field label={cloud ? 'ひとり目の名前' : '自分の名前'}>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
       {cloud ? (
         <section className="card">
-          <h2>☁️ ふたりで共有する</h2>
+          <h2>ふたりで共有する</h2>
           <p className="small">
             このアプリのデータはクラウドに保存され、開いている人の間でリアルタイムに共有されます。パートナーを招待するには、画面右上の共有メニューからパートナーのメールアドレスを
             <strong>編集者</strong>として追加してください（パートナーも claude.ai へのログインが必要です）。
@@ -70,7 +70,7 @@ export default function SettingsPage() {
         </section>
       ) : (
         <section className="card form">
-          <h2>📅 Googleカレンダー連携</h2>
+          <h2>Googleカレンダー連携</h2>
           <p className="muted small">
             Google Cloud Console で「OAuth クライアントID（ウェブアプリケーション）」を作成し、承認済みの JavaScript
             生成元にこのアプリのURL（例: {location.origin}）を追加してください。詳しくは README を参照。
@@ -94,7 +94,7 @@ export default function SettingsPage() {
       )}
 
       <section className="card form">
-        <h2>💾 データ</h2>
+        <h2>データ</h2>
         <p className="muted small">
           {cloud
             ? 'ローカル版でエクスポートしたファイルを読み込んで、クラウドに引き継げます。'
