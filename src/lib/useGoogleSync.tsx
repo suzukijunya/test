@@ -9,6 +9,7 @@ import {
   GCAL_LIST_TOOL,
   GCAL_SERVER,
   mergeGoogleEvents,
+  nextPageTokenOf,
   SYNC_FUTURE_DAYS,
   SYNC_PAST_DAYS,
 } from './googleSync';
@@ -108,8 +109,9 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
         .describeTool(GCAL_SERVER, GCAL_LIST_TOOL)
         .then((t) => t.inputSchema as Parameters<typeof buildListArgs>[0])
         .catch(() => null);
-    const call = (schema: Parameters<typeof buildListArgs>[0]) =>
-      mcp.callTool(GCAL_SERVER, GCAL_LIST_TOOL, buildListArgs(schema, from, to), { cache: false });
+    const call = (schema: Parameters<typeof buildListArgs>[0], pageToken?: string) =>
+      mcp.callTool(GCAL_SERVER, GCAL_LIST_TOOL, buildListArgs(schema, from, to, pageToken), { cache: false });
+    const payloadOf = (r: Awaited<ReturnType<typeof call>>) => r.payload ?? r.content?.find((b) => b.type === 'text')?.text;
     try {
       let schema = await schemaOf();
       let res;
@@ -122,8 +124,15 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
         if (!schema) throw e;
         res = await call(schema);
       }
-      const payload = res.payload ?? res.content?.find((b) => b.type === 'text')?.text;
+      let payload = payloadOf(res);
       const imported = extractEvents(payload);
+      // 予定が多いときは続きのページも読む（最大4ページ＝1000件）
+      for (let page = 1; page < 4; page++) {
+        const token = nextPageTokenOf(payload);
+        if (!token) break;
+        payload = payloadOf(await call(schema, token));
+        imported.push(...extractEvents(payload));
+      }
       const range = { from: toDateString(from), to: toDateString(to) };
       let added = 0;
       update((d) => {

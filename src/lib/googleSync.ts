@@ -1,7 +1,8 @@
 /**
  * claude.ai の Google Calendar コネクタ（mcp capability）から自分の予定を取り込む。
- * コネクタの引数名・返り値の形はこのページを作った時点で確認できていないため、
- * 引数はツールのスキーマ（describeTool）から組み立て、返り値はよくある形を広く受け付ける。
+ * list_events は startTime / endTime（UTCオフセットなしの現地時刻）、pageSize（最大250）、
+ * orderBy、pageToken を受け取り、{ events: [...], nextPageToken } を返す。
+ * 念のため引数はツールのスキーマ（describeTool）に合わせ、返り値も別の形を広く受け付ける。
  */
 import type { CalendarEntry, Owner } from '../types';
 import { toDateString } from './dates';
@@ -23,24 +24,49 @@ const pick = (props: string[], candidates: string[]) => {
   return null;
 };
 
-/** list_events の入力をスキーマに合わせて作る（スキーマが無ければよくある名前で送る） */
-export function buildListArgs(schema: Schema, timeMin: Date, timeMax: Date): Record<string, unknown> {
+/** "2026-10-15T09:30:00"（UTCオフセットなしの現地時刻） */
+export function localIso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/** list_events の入力をスキーマに合わせて作る（スキーマが読めなければ Google Calendar コネクタの引数名で送る） */
+export function buildListArgs(schema: Schema, timeMin: Date, timeMax: Date, pageToken?: string): Record<string, unknown> {
   const props = Object.keys(schema?.properties ?? {});
   if (props.length === 0) {
-    return { time_min: timeMin.toISOString(), time_max: timeMax.toISOString() };
+    const args: Record<string, unknown> = { startTime: localIso(timeMin), endTime: localIso(timeMax), pageSize: 250, orderBy: 'startTime' };
+    if (pageToken) args.pageToken = pageToken;
+    return args;
   }
   const args: Record<string, unknown> = {};
   const min = pick(props, ['time_min', 'timeMin', 'start_time', 'startTime', 'start_date', 'startDate', 'start', 'from', 'after']);
   const max = pick(props, ['time_max', 'timeMax', 'end_time', 'endTime', 'end_date', 'endDate', 'end', 'to', 'before']);
-  if (min) args[min] = timeMin.toISOString();
-  if (max) args[max] = timeMax.toISOString();
+  if (min) args[min] = localIso(timeMin);
+  if (max) args[max] = localIso(timeMax);
   const limit = pick(props, ['max_results', 'maxResults', 'limit', 'page_size', 'pageSize']);
   if (limit) args[limit] = 250;
   const single = pick(props, ['single_events', 'singleEvents', 'expand_recurring', 'expandRecurring']);
   if (single) args[single] = true;
   const order = pick(props, ['order_by', 'orderBy']);
   if (order) args[order] = 'startTime';
+  const token = pick(props, ['pageToken', 'page_token', 'cursor']);
+  if (token && pageToken) args[token] = pageToken;
   return args;
+}
+
+/** 返り値から次ページのトークンを取り出す */
+export function nextPageTokenOf(payload: unknown): string | null {
+  let v = payload;
+  if (typeof v === 'string') {
+    try {
+      v = JSON.parse(v);
+    } catch {
+      return null;
+    }
+  }
+  if (!isObj(v)) return null;
+  const t = v.nextPageToken ?? v.next_page_token ?? v.nextCursor;
+  return typeof t === 'string' && t ? t : null;
 }
 
 type Obj = Record<string, unknown>;

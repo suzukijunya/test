@@ -1,19 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { buildListArgs, extractEvents, mergeGoogleEvents } from './googleSync';
+import { buildListArgs, extractEvents, localIso, mergeGoogleEvents, nextPageTokenOf } from './googleSync';
 import type { CalendarEntry } from '../types';
 
 describe('Googleカレンダー同期', () => {
-  const from = new Date('2026-10-07T00:00:00Z');
-  const to = new Date('2026-12-13T00:00:00Z');
+  const from = new Date(2026, 9, 7);
+  const to = new Date(2026, 11, 13, 23, 59);
 
-  it('スキーマの引数名に合わせる', () => {
-    expect(buildListArgs({ properties: { timeMin: {}, timeMax: {}, maxResults: {} } }, from, to)).toEqual({
-      timeMin: from.toISOString(),
-      timeMax: to.toISOString(),
-      maxResults: 250,
+  it('Google Calendar コネクタの引数（現地時刻・Zなし）', () => {
+    const schema = { properties: { startTime: {}, endTime: {}, pageSize: {}, orderBy: {}, pageToken: {}, calendarId: {} } };
+    expect(buildListArgs(schema, from, to, 'tok')).toEqual({
+      startTime: '2026-10-07T00:00:00',
+      endTime: '2026-12-13T23:59:00',
+      pageSize: 250,
+      orderBy: 'startTime',
+      pageToken: 'tok',
     });
-    expect(Object.keys(buildListArgs({ properties: { start_time: {}, end_time: {} } }, from, to))).toEqual(['start_time', 'end_time']);
-    expect(buildListArgs(null, from, to)).toHaveProperty('time_min');
+    expect(buildListArgs(null, from, to)).toEqual({ startTime: localIso(from), endTime: localIso(to), pageSize: 250, orderBy: 'startTime' });
+    expect(Object.keys(buildListArgs({ properties: { time_min: {}, time_max: {} } }, from, to))).toEqual(['time_min', 'time_max']);
+    expect(nextPageTokenOf({ events: [], nextPageToken: 'abc' })).toBe('abc');
+    expect(nextPageTokenOf('{"events":[]}')).toBeNull();
+  });
+
+  it('コネクタの実際の返り値の形（events / summary / start.dateTime）', () => {
+    const ev = extractEvents({
+      accessRole: 'owner',
+      events: [
+        { id: 'r1_20261020T060000Z', summary: '定例', status: 'confirmed', recurringEventId: 'r1',
+          start: { dateTime: '2026-10-20T15:00:00+09:00', timeZone: 'Asia/Tokyo' }, end: { dateTime: '2026-10-20T18:00:00+09:00', timeZone: 'Asia/Tokyo' } },
+      ],
+      nextPageToken: 'x',
+    });
+    expect(ev).toHaveLength(1);
+    expect(ev[0]).toMatchObject({ googleId: 'r1_20261020T060000Z', title: '定例' });
   });
 
   it('いろいろな返り値の形を読む', () => {
